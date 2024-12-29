@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 
-internal class MongoRepository<T> : IRepository<T> where T : IEntity
+internal sealed class MongoRepository<T> : IRepository<T> where T : IEntity
 {
     private readonly IMongoCollection<T> collection;
 
@@ -33,16 +33,16 @@ internal class MongoRepository<T> : IRepository<T> where T : IEntity
 
     public async Task<T> FindByIdAsync(Guid id, CancellationToken token = default)
     {
-        var cursor = await this.collection.FindAsync(x => x.Id == id);
+        var cursor = await this.collection.FindAsync(x => x.Id == id, cancellationToken: token);
 
-        return await cursor.SingleOrDefaultAsync();
+        return await cursor.SingleOrDefaultAsync(cancellationToken: token);
     }
 
     public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> expression, CancellationToken token = default)
     {
-        var cursor = await this.collection.FindAsync(expression);
+        var cursor = await this.collection.FindAsync(expression, cancellationToken: token);
 
-        return await cursor.ToListAsync();
+        return await cursor.ToListAsync(cancellationToken: token);
     }
 
     public async Task SaveAsync(T entity, CancellationToken cancellationToken = default)
@@ -59,12 +59,12 @@ internal class MongoRepository<T> : IRepository<T> where T : IEntity
 
     public async Task SaveAsync(IReadOnlyCollection<T> entities, CancellationToken cancellationToken = default)
     {
-        if (!entities?.Any() ?? true)
+        if (!entities.Any())
         {
             return;
         }
 
-        var operations = entities!.Select(
+        var operations = entities.Select(
             entity => new ReplaceOneModel<T>(
                 new ExpressionFilterDefinition<T>(x => x.Id.Equals(entity.Id)),
                 entity)

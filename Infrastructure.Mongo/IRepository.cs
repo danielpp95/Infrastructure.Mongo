@@ -1,7 +1,8 @@
-﻿using System.Linq.Expressions;
+﻿namespace Infrastructure.Mongo;
 
-namespace Infrastructure.Mongo;
-public interface IRepository<T>
+using System.Linq.Expressions;
+
+public interface IRepository<T> where T : IEntity
 {
     Task<T> FindByIdAsync(Guid id, CancellationToken token = default);
 
